@@ -20,10 +20,20 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 @api_view(["GET"])
+def root(request):
+    return Response({
+        "name": "BANPRO Factoring API",
+        "status": "running",
+        "health": "/health/",
+        "admin": "/admin/"
+    })
+
+@api_view(["GET"])
 def health(request):
     return Response({"status": "ok"})
 
 urlpatterns = [
+    path("", root),
     path("admin/", admin.site.urls),
     path("health/", health),
 ]
