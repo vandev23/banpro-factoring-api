@@ -37,4 +37,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", health),
     path("api/", include("clientes.api.urls")),
+    path("api/", include("facturas.api.urls")),
 ]

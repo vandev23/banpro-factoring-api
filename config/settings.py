@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "core",
     "clientes",
+    "facturas",
 ]
 
 REST_FRAMEWORK = {
