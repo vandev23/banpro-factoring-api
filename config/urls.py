@@ -18,6 +18,11 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 
 @api_view(["GET"])
 def root(request):
@@ -39,4 +44,7 @@ urlpatterns = [
     path("api/", include("clientes.api.urls")),
     path("api/", include("facturas.api.urls")),
     path("api/", include("operaciones.api.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]

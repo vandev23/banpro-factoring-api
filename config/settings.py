@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "rest_framework",
+    "drf_spectacular",
     "core",
     "clientes",
     "facturas",
@@ -44,6 +45,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "core.errores.manejador_excepciones",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 MIDDLEWARE = [
@@ -155,4 +157,14 @@ LOGGING = {
         }
     },
     "root": {"handlers": ["console"], "level": "INFO"},
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "BANPRO Factoring API",
+    "DESCRIPTION": (
+        "API REST para la gestión de Clientes, Facturas y "
+        "Operaciones de Cesión en BANPRO Factoring."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
