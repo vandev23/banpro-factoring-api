@@ -47,6 +47,7 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE = [
+    "core.middlewares.RequestIdMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -132,3 +133,26 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "%(asctime)s %(levelname)s %(name)s [request_id=%(request_id)s] %(message)s"
+        },
+    },
+    "filters": {
+        "request_id": {
+            "()": "core.logging_filters.RequestIdFilter",
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "filters": ["request_id"],
+        }
+    },
+    "root": {"handlers": ["console"], "level": "INFO"},
+}

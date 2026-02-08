@@ -12,6 +12,7 @@ from operaciones.servicios import (
     registrar_desembolso,
     finalizar_operacion_si_pagada,
 )
+from operaciones.modelos import OperacionEvento
 
 
 class VistaOperacion(viewsets.ModelViewSet):
@@ -53,3 +54,20 @@ class VistaOperacion(viewsets.ModelViewSet):
     def finalizar(self, request, pk=None):
         operacion = finalizar_operacion_si_pagada(int(pk))
         return Response(self.get_serializer(operacion).data)
+    
+    @action(detail=True, methods=["get"], url_path="eventos")
+    def eventos(self, request, pk=None):
+        eventos = OperacionEvento.objects.filter(operacion_id=pk).order_by("fecha")
+        data = [
+            {
+                "id": e.id,
+                "tipo": e.tipo,
+                "fecha": e.fecha.isoformat(),
+                "estado_anterior": e.estado_anterior,
+                "estado_nuevo": e.estado_nuevo,
+                "detalle": e.detalle,
+            }
+            for e in eventos
+        ]
+        return Response({"operacion_id": int(pk), "eventos": data})
+

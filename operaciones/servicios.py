@@ -10,12 +10,34 @@ from rest_framework.exceptions import ValidationError
 from clientes.modelos import Cliente
 from facturas.modelos import Factura, EstadoFactura
 from operaciones.modelos import OperacionCesion, OperacionFactura, EstadoOperacion
+from operaciones.modelos import OperacionEvento, TipoEventoOperacion
+from core.request_context import request_id_ctx
 
 logger = logging.getLogger(__name__)
 
 
 def _hoy() -> date:
     return timezone.localdate()
+
+
+def _registrar_evento(
+    *,
+    operacion: OperacionCesion,
+    tipo: str,
+    estado_anterior: str = "",
+    estado_nuevo: str = "",
+    detalle: dict | None = None,
+):
+    payload = detalle.copy() if detalle else {}
+    payload["request_id"] = request_id_ctx.get()
+
+    OperacionEvento.objects.create(
+        operacion=operacion,
+        tipo=tipo,
+        estado_anterior=estado_anterior or "",
+        estado_nuevo=estado_nuevo or "",
+        detalle=payload,
+    )
 
 
 def _calcular_descuento(monto_total: Decimal, tasa: Decimal, dias_hasta_venc: int) -> tuple[Decimal, Decimal]:
@@ -84,6 +106,20 @@ def crear_operacion(cliente_id: int, facturas_ids: list[int], tasa_descuento: De
         [OperacionFactura(operacion=operacion, factura=f) for f in facturas]
     )
 
+    _registrar_evento(
+    operacion=operacion,
+    tipo=TipoEventoOperacion.CREADA,
+    estado_anterior="",
+    estado_nuevo=operacion.estado,
+    detalle={
+        "facturas_ids": facturas_ids,
+        "monto_total_facturas": str(monto_total),
+        "tasa_descuento": str(tasa),
+        "monto_descuento": str(monto_desc),
+        "monto_a_desembolsar": str(monto_desemb),
+    },
+    )
+
     logger.info("Operación creada", extra={"operacion_id": operacion.id, "cliente_id": cliente.id})
     return operacion
 
@@ -123,10 +159,23 @@ def aprobar_operacion(operacion_id: int) -> OperacionCesion:
     cliente.linea_disponible = (cliente.linea_disponible - operacion.monto_total_facturas).quantize(Decimal("0.01"))
     cliente.save(update_fields=["linea_disponible", "actualizado_en"])
 
+    estado_anterior = operacion.estado
     operacion.estado = EstadoOperacion.APROBADA
     operacion.fecha_aprobacion = timezone.now()
     operacion.motivo_rechazo = ""
     operacion.save(update_fields=["estado", "fecha_aprobacion", "motivo_rechazo", "actualizado_en"])
+
+    _registrar_evento(
+    operacion=operacion,
+    tipo=TipoEventoOperacion.APROBADA,
+    estado_anterior=estado_anterior,
+    estado_nuevo=operacion.estado,
+    detalle={
+        "linea_disponible_anterior": str((cliente.linea_disponible + operacion.monto_total_facturas).quantize(Decimal("0.01"))),
+        "linea_disponible_nueva": str(cliente.linea_disponible),
+        "facturas": [f.id for f in facturas],
+    },
+    )
 
     logger.info("Operación aprobada", extra={"operacion_id": operacion.id, "cliente_id": cliente.id})
     return operacion
@@ -143,11 +192,20 @@ def rechazar_operacion(operacion_id: int, motivo: str) -> OperacionCesion:
     if not motivo:
         raise ValidationError({"motivo_rechazo": "Debe indicar un motivo de rechazo."})
 
+    estado_anterior = operacion.estado
     operacion.estado = EstadoOperacion.RECHAZADA
     operacion.motivo_rechazo = motivo
     operacion.fecha_aprobacion = None
     operacion.save(update_fields=["estado", "motivo_rechazo", "fecha_aprobacion", "actualizado_en"])
 
+    _registrar_evento(
+    operacion=operacion,
+    tipo=TipoEventoOperacion.RECHAZADA,
+    estado_anterior=estado_anterior,
+    estado_nuevo=operacion.estado,
+    detalle={"motivo_rechazo": motivo},
+    )
+    
     logger.info("Operación rechazada", extra={"operacion_id": operacion.id})
     return operacion
 
@@ -159,9 +217,18 @@ def registrar_desembolso(operacion_id: int) -> OperacionCesion:
     if operacion.estado != EstadoOperacion.APROBADA:
         raise ValidationError({"estado": "Solo se puede desembolsar una operación aprobada."})
 
+    estado_anterior = operacion.estado
     operacion.estado = EstadoOperacion.DESEMBOLSADA
     operacion.fecha_desembolso = timezone.now()
     operacion.save(update_fields=["estado", "fecha_desembolso", "actualizado_en"])
+
+    _registrar_evento(
+    operacion=operacion,
+    tipo=TipoEventoOperacion.DESEMBOLSADA,
+    estado_anterior=estado_anterior,
+    estado_nuevo=operacion.estado,
+    detalle={"monto_a_desembolsar": str(operacion.monto_a_desembolsar)},
+    )
 
     logger.info("Desembolso registrado", extra={"operacion_id": operacion.id})
     return operacion
@@ -190,9 +257,18 @@ def finalizar_operacion_si_pagada(operacion_id: int) -> OperacionCesion:
     cliente.linea_disponible = (cliente.linea_disponible + operacion.monto_total_facturas).quantize(Decimal("0.01"))
     cliente.save(update_fields=["linea_disponible", "actualizado_en"])
 
+    estado_anterior = operacion.estado
     operacion.estado = EstadoOperacion.FINALIZADA
     operacion.fecha_finalizacion = timezone.now()
     operacion.save(update_fields=["estado", "fecha_finalizacion", "actualizado_en"])
+
+    _registrar_evento(
+    operacion=operacion,
+    tipo=TipoEventoOperacion.FINALIZADA,
+    estado_anterior=estado_anterior,
+    estado_nuevo=operacion.estado,
+    detalle={"linea_disponible_nueva": str(cliente.linea_disponible)},
+    )
 
     logger.info("Operación finalizada", extra={"operacion_id": operacion.id})
     return operacion
