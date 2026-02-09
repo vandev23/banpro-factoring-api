@@ -7,12 +7,13 @@ from django.db.models import Sum
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from clientes.modelos import Cliente
+from clientes.modelos import Cliente, cliente
 from django.conf import settings
 from facturas.modelos import Factura, EstadoFactura
 from operaciones.modelos import OperacionCesion, OperacionFactura, EstadoOperacion
 from operaciones.modelos import OperacionEvento, TipoEventoOperacion
 from core.request_context import request_id_ctx
+from clientes.modelos import Cliente, EstadoCliente
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,11 @@ def crear_operacion(cliente_id: int, facturas_ids: list[int], tasa_descuento: De
 
     cliente = Cliente.objects.select_for_update().get(id=cliente_id)
 
+    if cliente.estado != EstadoCliente.ACTIVO:
+        raise ValidationError({
+            "cliente": "El cliente debe estar en estado ACTIVO para cursar operaciones."
+        })
+
     facturas = list(
         Factura.objects.select_for_update()
         .filter(id__in=facturas_ids)
@@ -64,6 +70,7 @@ def crear_operacion(cliente_id: int, facturas_ids: list[int], tasa_descuento: De
 
     if len(facturas) != len(set(facturas_ids)):
         raise ValidationError({"facturas_ids": "Una o más facturas no existen."})
+
 
     # Validar que pertenecen al mismo cliente
     if any(f.cliente_id != cliente.id for f in facturas):
