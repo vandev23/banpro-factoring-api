@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+from decimal import Decimal
 import os
 from pathlib import Path
 
@@ -168,3 +169,5 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+DEFAULT_TASA_DESCUENTO = Decimal(os.getenv("DEFAULT_TASA_DESCUENTO", "2.00"))

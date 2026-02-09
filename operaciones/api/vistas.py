@@ -42,8 +42,7 @@ class VistaOperacion(viewsets.ModelViewSet):
 
         operacion = crear_operacion(
             cliente_id=serializer.validated_data["cliente"].id,
-            facturas_ids=serializer.validated_data["facturas_ids"],
-            tasa_descuento=serializer.validated_data.get("tasa_descuento"),
+            facturas_ids=serializer.validated_data["facturas_ids"]
         )
         return Response(self.get_serializer(operacion).data, status=201)
 

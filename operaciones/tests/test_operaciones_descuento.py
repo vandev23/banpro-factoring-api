@@ -1,6 +1,7 @@
 import pytest
 from decimal import Decimal, ROUND_HALF_UP
 from django.utils import timezone
+from django.conf import settings
 from rest_framework.test import APIClient
 
 from clientes.modelos import Cliente, EstadoCliente
@@ -46,11 +47,11 @@ def test_descuento_usa_vencimiento_mas_lejano():
     f1 = _crear_factura(cliente, "F-1", Decimal("100000.00"), dias_hasta_venc=10)
     f2 = _crear_factura(cliente, "F-2", Decimal("200000.00"), dias_hasta_venc=40)
 
-    tasa = Decimal("2.00")  # 2%
+    tasa = settings.DEFAULT_TASA_DESCUENTO
 
     resp = api.post(
         "/api/operaciones/",
-        {"cliente": cliente.id, "facturas_ids": [f1.id, f2.id], "tasa_descuento": str(tasa)},
+        {"cliente": cliente.id, "facturas_ids": [f1.id, f2.id]},
         format="json",
     )
     assert resp.status_code == 201, resp.data

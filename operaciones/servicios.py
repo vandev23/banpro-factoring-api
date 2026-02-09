@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from clientes.modelos import Cliente
+from django.conf import settings
 from facturas.modelos import Factura, EstadoFactura
 from operaciones.modelos import OperacionCesion, OperacionFactura, EstadoOperacion
 from operaciones.modelos import OperacionEvento, TipoEventoOperacion
@@ -82,7 +83,10 @@ def crear_operacion(cliente_id: int, facturas_ids: list[int], tasa_descuento: De
     monto_total = sum((f.monto_total for f in facturas), Decimal("0.00"))
 
     # tasa
-    tasa = Decimal(tasa_descuento) if tasa_descuento is not None else Decimal("2.00")
+    tasa = Decimal(tasa_descuento) if tasa_descuento is not None else settings.DEFAULT_TASA_DESCUENTO
+
+    if tasa <= 0 or tasa > Decimal("100"):
+        raise ValidationError({"tasa_descuento": "La tasa de descuento debe estar entre 0 y 100."})
 
     # vencimiento más lejano
     venc_mas_lejano = max(f.fecha_vencimiento for f in facturas)
