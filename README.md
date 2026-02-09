@@ -47,7 +47,7 @@ config/         # settings y urls
 ## 🚀 Levantar el proyecto
 
 ```bash
-git clone `https://github.com/vandev23/banpro-factoring-api/`
+git clone https://github.com/vandev23/banpro-factoring-api.git
 cd banpro-factoring-api
 cp .env.example .env
 docker compose up --build -d
@@ -163,11 +163,60 @@ GET /api/operaciones/{id}/eventos/
 
 ## 🧩 Bonus – Diseño futuro (no implementado)
 
-- 🔔 Notificaciones asíncronas
+### 🔔 Notificaciones asíncronas al aprobar una operación (AWS)
 
-- 🗓️ Procesamiento batch de facturas vencidas
+**Objetivo**  
+Al aprobar una operación, disparar notificaciones (email y webhook) de forma **asíncrona**, **resiliente** y **sin impactar** la latencia de la API.
 
-- 🛠️ Migración desde stored procedures
+**Diseño propuesto (alineado a backend Django + AWS)**  
+1. **Transacción de negocio (Django + PostgreSQL)**  
+   En `aprobar_operacion()` se actualiza el estado y se registra un evento en una tabla `outbox_event` dentro de la misma transacción.
+
+2. **Dispatcher asíncrono**  
+   Un worker liviano (Celery/RQ o comando programado) lee eventos pendientes y los publica en un **Amazon SNS Topic** (`factoring-operaciones-topic`).
+
+3. **Fan-out por consumidores (SNS → SQS)**  
+   SNS distribuye el evento a colas SQS por tipo de consumidor:
+   - `factoring-email-queue`
+   - `factoring-webhook-queue`
+
+4. **Procesamiento (AWS Lambda)**  
+   - Lambda `email_notifier`: consume SQS y envía correos vía **Amazon SES**
+   - Lambda `webhook_notifier`: consume SQS y ejecuta HTTP POST a endpoints externos
+
+**Consistencia – Outbox Pattern**  
+Garantiza que la operación aprobada y el evento de notificación sean consistentes, evitando pérdidas de eventos.
+
+**Payload sugerido**
+```json
+{
+  "event_id": "uuid",
+  "type": "operacion.aprobada",
+  "operacion_id": 123,
+  "cliente_id": 45,
+  "monto_a_desembolsar": "298000.00",
+  "tasa_descuento": "2.00",
+  "request_id": "..."
+}
+```
+
+---
+
+### 🗓️ Procesamiento batch de facturas vencidas
+
+- Job diario (cron / Celery Beat / EventBridge Scheduler)
+- Marca facturas vencidas según fecha y estado
+- Procesamiento en batch para grandes volúmenes
+
+---
+
+### 🛠️ Migración desde stored procedures
+
+- Identificación de SPs y reglas
+- Tests de caracterización
+- Implementación en servicios de dominio
+- Ejecución paralela (dual-run)
+- Cutover gradual con feature flags
 
 ---
 
