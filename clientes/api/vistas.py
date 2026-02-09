@@ -5,8 +5,20 @@ from rest_framework.response import Response
 from clientes.api.serializadores import SerializadorCliente
 from clientes.selectores import obtener_clientes_filtrados
 from clientes.servicios import activar_cliente, suspender_cliente
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 
+@extend_schema_view(
+    list=extend_schema(tags=["Clientes"]),
+    retrieve=extend_schema(tags=["Clientes"]),
+    create=extend_schema(tags=["Clientes"]),
+    update=extend_schema(tags=["Clientes"]),
+    partial_update=extend_schema(tags=["Clientes"]),
+    destroy=extend_schema(tags=["Clientes"]),
+    activar=extend_schema(tags=["Clientes"]),
+    suspender=extend_schema(tags=["Clientes"]),
+    linea_disponible=extend_schema(tags=["Clientes"]),
+)
 class VistaCliente(viewsets.ModelViewSet):
     serializer_class = SerializadorCliente
 

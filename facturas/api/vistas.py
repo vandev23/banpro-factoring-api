@@ -6,8 +6,18 @@ from facturas.api.serializadores import SerializadorFactura
 from facturas.modelos import Factura
 from facturas.selectores import obtener_facturas_filtradas
 from facturas.servicios import marcar_pagada, marcar_anulada
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
-
+@extend_schema_view(
+    list=extend_schema(tags=["Facturas"]),
+    retrieve=extend_schema(tags=["Facturas"]),
+    create=extend_schema(tags=["Facturas"]),
+    update=extend_schema(tags=["Facturas"]),
+    partial_update=extend_schema(tags=["Facturas"]),
+    destroy=extend_schema(tags=["Facturas"]),
+    pagar=extend_schema(tags=["Facturas"]),
+    anular=extend_schema(tags=["Facturas"]),
+)
 class VistaFactura(viewsets.ModelViewSet):
     serializer_class = SerializadorFactura
 
