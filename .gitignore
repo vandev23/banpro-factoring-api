@@ -33,7 +33,6 @@ htmlcov/
 # Environment variables
 # =========================
 .env
-.env.*
 
 # =========================
 # Docker

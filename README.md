@@ -47,7 +47,7 @@ config/         # settings y urls
 ## 🚀 Levantar el proyecto
 
 ```bash
-git clone <https://github.com/vandev23/banpro-factoring-api/>
+git clone `https://github.com/vandev23/banpro-factoring-api/`
 cd banpro-factoring-api
 cp .env.example .env
 docker compose up --build -d
@@ -163,11 +163,11 @@ GET /api/operaciones/{id}/eventos/
 
 ## 🧩 Bonus – Diseño futuro (no implementado)
 
-# 🔔 Notificaciones asíncronas
+- 🔔 Notificaciones asíncronas
 
-# 🗓️ Procesamiento batch de facturas vencidas
+- 🗓️ Procesamiento batch de facturas vencidas
 
-# 🛠️ Migración desde stored procedures
+- 🛠️ Migración desde stored procedures
 
 ---
 
