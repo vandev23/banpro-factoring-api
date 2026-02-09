@@ -4,6 +4,8 @@ from rest_framework import serializers
 
 from core.rut import es_rut_valido, normalizar_rut
 from facturas.modelos import Factura, EstadoFactura
+from decimal import Decimal
+from rest_framework import serializers
 
 
 class SerializadorFactura(serializers.ModelSerializer):
@@ -23,6 +25,11 @@ class SerializadorFactura(serializers.ModelSerializer):
             "actualizado_en",
         ]
         read_only_fields = ["id", "estado", "creado_en", "actualizado_en"]
+
+    def validate_monto_total(self, value):
+        if value <= Decimal("0"):
+            raise serializers.ValidationError("El monto_total debe ser mayor a 0.")
+        return value
 
     def validate_rut_deudor(self, value: str) -> str:
         if not es_rut_valido(value):

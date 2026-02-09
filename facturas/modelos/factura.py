@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 
 from clientes.modelos import Cliente
+from django.core.validators import MinValueValidator
+from decimal import Decimal
 
 
 class EstadoFactura(models.TextChoices):
@@ -20,7 +22,10 @@ class Factura(models.Model):
     rut_deudor = models.CharField(max_length=12)
     razon_social_deudor = models.CharField(max_length=255)
 
-    monto_total = models.DecimalField(max_digits=15, decimal_places=2)
+    monto_total = models.DecimalField(
+    max_digits=15,
+    decimal_places=2,
+    validators=[MinValueValidator(Decimal("0.01"))],)
 
     fecha_emision = models.DateField()
     fecha_vencimiento = models.DateField()
