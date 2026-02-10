@@ -92,6 +92,11 @@ def crear_operacion(cliente_id: int, facturas_ids: list[int], tasa_descuento: De
 
     monto_total = sum((f.monto_total for f in facturas), Decimal("0.00"))
 
+    if monto_total <= Decimal("0.00"):
+        raise ValidationError({
+            "facturas_ids": "El monto total de las facturas debe ser mayor a 0."
+        })
+
     # tasa
     tasa = Decimal(tasa_descuento) if tasa_descuento is not None else settings.DEFAULT_TASA_DESCUENTO
 
