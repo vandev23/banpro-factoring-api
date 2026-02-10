@@ -68,6 +68,9 @@ def crear_operacion(cliente_id: int, facturas_ids: list[int], tasa_descuento: De
         .select_related("cliente")
     )
 
+    if len(facturas_ids) != len(set(facturas_ids)):
+        raise ValidationError({"facturas_ids": "No se permiten facturas duplicadas."})
+
     if len(facturas) != len(set(facturas_ids)):
         raise ValidationError({"facturas_ids": "Una o más facturas no existen."})
 
